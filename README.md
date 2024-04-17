@@ -55,4 +55,3 @@ If you'd like to contribute to this project, feel free to fork the repository an
 ## Issues
 
 If you encounter any issues with the bot, please open an issue on the GitHub repository. Be sure to provide detailed information about the problem you're experiencing.
-```
