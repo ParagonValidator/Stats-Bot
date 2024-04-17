@@ -1,4 +1,4 @@
-```
+
 # Validator Stats Bot
 
 This JavaScript bot is designed to have some stats and infos for your validator. Follow the steps below to get started:
@@ -31,7 +31,7 @@ yarn
 
 ## Configuration
 
-Before running the bot, you need to set up your environment variables. Copy the `.env.example` file and rename it to `.env`. Fill in the required values for the environment variables listed in the file.
+Before running the bot, you need to set up your environment variables. Copy the `.env.example` file and rename it to `.env`. Fill in the required values for the environment variables listed in the file.  
 The telegram token can be generated using [BotFather](https://github.com/ParagonValidator/Stats-Bot.git)
 
 ## Running the Bot
