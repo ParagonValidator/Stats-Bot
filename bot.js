@@ -122,7 +122,7 @@ bot.on('callback_query', async (query) => {
                 });
             }
             const data = await response.json();
-            bot.sendMessage(chatId, `Rank: ${data.rank}\nWiz Score: ${data.wiz_score}%\nVote Success: ${data.vote_success}%\nSkip rate: ${data.skip_rate}%\n`).then((sentMessage) => {
+            bot.sendMessage(chatId, `Rank: ${data.rank}\nWiz Score: ${data.wiz_score}%\nVote Success: ${data.vote_success}%\nSkip rate: ${data.skip_rate.toFixed(2)}%\n`).then((sentMessage) => {
                 const messageId = sentMessage.message_id;
                 setTimeout(() => {
                     bot.deleteMessage(chatId, messageId);
