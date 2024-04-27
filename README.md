@@ -32,7 +32,7 @@ yarn
 ## Configuration
 
 Before running the bot, you need to set up your environment variables. Copy the `.env.example` file and rename it to `.env`. Fill in the required values for the environment variables listed in the file.  
-The telegram token can be generated using [BotFather](https://github.com/ParagonValidator/Stats-Bot.git)
+The telegram token can be generated using [BotFather](https://core.telegram.org/bots/tutorial#introduction)
 
 ## Running the Bot
 
