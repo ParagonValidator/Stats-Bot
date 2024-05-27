@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const fetch = require('node-fetch');
-const {Connection} = require('@solana/web3.js');
+const {Connection,PublicKey, LAMPORTS_PER_SOL} = require('@solana/web3.js');
 require('dotenv').config();
 
 
@@ -141,25 +141,62 @@ bot.on('callback_query', async (query) => {
 
     if (command === "stakeChanges") {
         try {
-            const response = await fetch(`https://api.stakewiz.com/validator_epoch_stake_accounts/${process.env.VOTE_ADDRESS}`);
-            if (!response.ok) {
-                throw new Error("Failed to fetch data");
-            }
-            const data = await response.json();
+            const connection = new Connection(process.env.RPC_URL)
+            const epochInfo = await connection.getEpochInfo()
 
-            let activating = data.activating.stake_accounts.map((obj) => {
+            const stakedAccounts = await connection.getParsedProgramAccounts(
+                new PublicKey("Stake11111111111111111111111111111111111111"),
+                {
+                    filters: [
+                        {
+                            memcmp: {
+                                offset: 124,
+                                bytes: process.env.VOTE_ADDRESS,
+                            },
+                        },
+                    ],
+                }
+            )
+
+            const activatingAccounts = stakedAccounts.filter(
+                (stakedAccount) =>
+                    Number(
+                        stakedAccount.account.data.parsed.info.stake.delegation.activationEpoch
+                    ) >= epochInfo.epoch &&
+                    Number(
+                        stakedAccount.account.data.parsed.info.stake.delegation
+                            .deactivationEpoch
+                    ) === Number("18446744073709551615")
+            );
+
+            const deactivatingAccounts = stakedAccounts.filter(
+                (stakedAccount) =>
+                    Number(
+                        stakedAccount.account.data.parsed.info.stake.delegation.activationEpoch
+                    ) < epochInfo.epoch &&
+                    Number(
+                        stakedAccount.account.data.parsed.info.stake.delegation
+                            .deactivationEpoch
+                    ) === epochInfo.epoch
+            );
+
+            let activating = activatingAccounts.map((obj) => {
                 return {
-                    amount: parseFloat(obj.delegated_amount),
-                    formatted: parseFloat(obj.delegated_amount).toFixed(2) + " SOL"
+                    amount: (obj.account.data.parsed.info.stake.delegation.stake
+                     / LAMPORTS_PER_SOL),
+                    formatted: (obj.account.data.parsed.info.stake.delegation.stake
+                        / LAMPORTS_PER_SOL).toFixed(2) + " SOL"
                 };
             });
             activating.sort((a, b) => b.amount - a.amount);
             let totalActivating = activating.reduce((acc, cur) => acc + cur.amount, 0);
 
-            let deactivating = data.deactivating.stake_accounts.map((obj) => {
+            let deactivating = deactivatingAccounts.map((obj) => {
                 return {
-                    amount: parseFloat(obj.delegated_amount),
-                    formatted: parseFloat(obj.delegated_amount).toFixed(2) + " SOL"
+                    amount: (obj.account.data.parsed.info.stake.delegation.stake
+                        / LAMPORTS_PER_SOL),
+                    formatted: (obj.account.data.parsed.info.stake.delegation.stake
+                        / LAMPORTS_PER_SOL).toFixed(2) + " SOL"
                 };
             });
             deactivating.sort((a, b) => b.amount - a.amount);
