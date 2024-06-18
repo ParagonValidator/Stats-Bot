@@ -9,6 +9,9 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true});
 const slotTimeAvgSeconds = 0.450
 const autoDeleteTimer = 60_000
 
+let currentEpoch = null;
+let rewardsMap = new Map();
+
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(chatId, process.env.VALIDATOR_NAME ? `Welcome ${process.env.VALIDATOR_NAME} Operators` : "Welcome Operators", {
@@ -48,21 +51,36 @@ bot.on('callback_query', async (query) => {
             const epochInfo = await connection.getEpochInfo()
             const leaderSlots = leaderSchedule[process.env.IDENTITY_ADDRESS] || []
             const baseSlot = epochInfo.absoluteSlot - epochInfo.slotIndex
-            const rewards = await Promise.all(leaderSlots.filter((slotIndex) => slotIndex < epochInfo.slotIndex).map(async (slotIndex) => {
-                const slot = baseSlot + slotIndex
-                try {
-                    const slotInfo = await connection.getBlock(slot, {
-                        rewards: true,
-                        maxSupportedTransactionVersion: 0,
-                        transactionDetails: "none"
-                    })
-                    return {slot, rewards: (slotInfo?.rewards[0]?.lamports || 0) / 10 ** 9}
-                } catch (e) {
-                    return {slot, rewards: 0}
+
+            if (epochInfo.epoch !== currentEpoch) {
+                currentEpoch = epochInfo.epoch
+                rewardsMap.clear()
+                leaderSlots.filter((slotIndex) => {
+                    rewardsMap.set(slotIndex+baseSlot, 0)
+                })
+            }
+
+            const rewards = await Promise.all(Array.from(rewardsMap).filter(([key, _value]) => key < epochInfo.slotIndex+baseSlot).map(async ([key, value]) => {
+                if (value === 0) {
+                    try {
+                        const slotInfo = await connection.getBlock(key, {
+                            rewards: true,
+                            maxSupportedTransactionVersion: 0,
+                            transactionDetails: "none"
+                        })
+                        return {slot: key, rewards: (slotInfo?.rewards[0]?.lamports || 0) / 10 ** 9}
+                    } catch (e) {
+                        return {slot: key, rewards: 0}
+                    }
                 }
+                return {slot: key, rewards: value}
             }))
+            rewards.forEach((item) => {
+                rewardsMap.set(item.slot, item.rewards)
+            })
+
             const totalRewards = rewards.reduce((curr, prev) => curr + prev.rewards, 0)
-            const message = rewards.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`).join('\n').concat(`\n\nTotal: ${totalRewards.toFixed(4)} SOL`)
+            const message = rewards.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`).join('\n').concat(`\n\nTotal: ${totalRewards.toFixed(4)} SOL`).concat(`\nAvg Rewards/Slot: ${(totalRewards/rewards.length).toFixed(4)} SOL`)
             bot.sendMessage(chatId, message).then((sentMessage) => {
                 const messageId = sentMessage.message_id;
                 setTimeout(() => {
