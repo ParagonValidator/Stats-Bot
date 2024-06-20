@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const fetch = require('node-fetch');
-const {Connection,PublicKey, LAMPORTS_PER_SOL} = require('@solana/web3.js');
+const {Connection, PublicKey, LAMPORTS_PER_SOL} = require('@solana/web3.js');
 require('dotenv').config();
 
 
@@ -56,11 +56,11 @@ bot.on('callback_query', async (query) => {
                 currentEpoch = epochInfo.epoch
                 rewardsMap.clear()
                 leaderSlots.filter((slotIndex) => {
-                    rewardsMap.set(slotIndex+baseSlot, 0)
+                    rewardsMap.set(slotIndex + baseSlot, 0)
                 })
             }
 
-            const rewards = await Promise.all(Array.from(rewardsMap).filter(([key, _value]) => key < epochInfo.slotIndex+baseSlot).map(async ([key, value]) => {
+            const rewards = await Promise.all(Array.from(rewardsMap).filter(([key, _value]) => key < epochInfo.slotIndex + baseSlot).map(async ([key, value]) => {
                 if (value === 0) {
                     try {
                         const slotInfo = await connection.getBlock(key, {
@@ -80,7 +80,7 @@ bot.on('callback_query', async (query) => {
             })
 
             const totalRewards = rewards.reduce((curr, prev) => curr + prev.rewards, 0)
-            const message = rewards.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`).join('\n').concat(`\n\nTotal: ${totalRewards.toFixed(4)} SOL`).concat(`\nAvg Rewards/Slot: ${(totalRewards/rewards.length).toFixed(4)} SOL`)
+            const message = rewards.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`).join('\n').concat(`\n\nTotal: ${totalRewards.toFixed(4)} SOL`).concat(`\nAvg Rewards/Slot: ${(totalRewards / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`)
             bot.sendMessage(chatId, message).then((sentMessage) => {
                 const messageId = sentMessage.message_id;
                 setTimeout(() => {
@@ -201,7 +201,7 @@ bot.on('callback_query', async (query) => {
             let activating = activatingAccounts.map((obj) => {
                 return {
                     amount: (obj.account.data.parsed.info.stake.delegation.stake
-                     / LAMPORTS_PER_SOL),
+                        / LAMPORTS_PER_SOL),
                     formatted: (obj.account.data.parsed.info.stake.delegation.stake
                         / LAMPORTS_PER_SOL).toFixed(2) + " SOL"
                 };
