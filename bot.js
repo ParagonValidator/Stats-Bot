@@ -43,6 +43,7 @@ bot.onText(/\/start/, (msg) => {
 bot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id;
     const command = query.data;
+    await bot.answerCallbackQuery(query.id);
 
     if (command === "rewards") {
         try {
