@@ -14,26 +14,22 @@ let rewardsMap = new Map();
 
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, process.env.VALIDATOR_NAME ? `Welcome ${process.env.VALIDATOR_NAME} Operators` : "Welcome Operators", {
+    const validatorName = process.env.VALIDATOR_NAME ? process.env.VALIDATOR_NAME : "Operators";
+    const welcomeMessage = `👋 Welcome ${validatorName}!\n\nPlease choose an option below:`;
+
+    bot.sendMessage(chatId, welcomeMessage, {
         reply_markup: {
             inline_keyboard: [
                 [
-                    {
-                        text: "Stake Changes",
-                        callback_data: "stakeChanges"
-                    },
-                    {
-                        text: "Ranking",
-                        callback_data: "ranking"
-                    },
-                    {
-                        text: "Epoch Infos",
-                        callback_data: "epochInfos"
-                    },
-                    {
-                        text: "Rewards",
-                        callback_data: "rewards"
-                    }
+                    { text: "🔄 Stake Changes", callback_data: "stakeChanges" },
+                    { text: "📊 Ranking", callback_data: "ranking" }
+                ],
+                [
+                    { text: "ℹ️ Epoch Infos", callback_data: "epochInfos" },
+                    { text: "🎁 Rewards", callback_data: "rewards" }
+                ],
+                [
+                    { text: "💰 Balances", callback_data: "balances" }
                 ]
             ]
         }
@@ -44,6 +40,30 @@ bot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id;
     const command = query.data;
     await bot.answerCallbackQuery(query.id);
+
+    if (command === "balances") {
+        try {
+            const connection = new Connection(process.env.RPC_URL)
+
+            const identityBalance = await connection.getBalance(new PublicKey(process.env.IDENTITY_ADDRESS))
+            const voteBalance = await connection.getBalance(new PublicKey(process.env.VOTE_ADDRESS))
+
+            bot.sendMessage(chatId, `Identity Balance: ${(identityBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL\nVote Balance: ${(voteBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL\n`).then((sentMessage) => {
+                const messageId = sentMessage.message_id;
+                setTimeout(() => {
+                    bot.deleteMessage(chatId, messageId);
+                }, autoDeleteTimer);
+            });
+        } catch (e) {
+            console.log(e)
+            bot.sendMessage(chatId, "Error: the action couldn't be processed!").then((sentMessage) => {
+                const messageId = sentMessage.message_id;
+                setTimeout(() => {
+                    bot.deleteMessage(chatId, messageId);
+                }, autoDeleteTimer);
+            });
+        }
+    }
 
     if (command === "rewards") {
         try {
