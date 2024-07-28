@@ -21,15 +21,15 @@ bot.onText(/\/start/, (msg) => {
         reply_markup: {
             inline_keyboard: [
                 [
-                    { text: "🔄 Stake Changes", callback_data: "stakeChanges" },
-                    { text: "📊 Ranking", callback_data: "ranking" }
+                    {text: "🔄 Stake Changes", callback_data: "stakeChanges"},
+                    {text: "📊 Ranking", callback_data: "ranking"}
                 ],
                 [
-                    { text: "ℹ️ Epoch Infos", callback_data: "epochInfos" },
-                    { text: "🎁 Rewards", callback_data: "rewards" }
+                    {text: "ℹ️ Epoch Infos", callback_data: "epochInfos"},
+                    {text: "🎁 Rewards", callback_data: "rewards"}
                 ],
                 [
-                    { text: "💰 Balances", callback_data: "balances" }
+                    {text: "💰 Balances", callback_data: "balances"}
                 ]
             ]
         }
@@ -73,6 +73,20 @@ bot.on('callback_query', async (query) => {
             const leaderSlots = leaderSchedule[process.env.IDENTITY_ADDRESS] || []
             const baseSlot = epochInfo.absoluteSlot - epochInfo.slotIndex
 
+            const epochBuffer = Buffer.alloc(8); // allocate 8 bytes for u64
+            epochBuffer.writeBigUInt64LE(BigInt(epochInfo.epoch));
+
+            const [mevCollector] = PublicKey.findProgramAddressSync(
+                [
+                    Buffer.from("TIP_DISTRIBUTION_ACCOUNT"),
+                    new PublicKey(process.env.VOTE_ADDRESS).toBuffer(),
+                    epochBuffer,
+                ],
+                new PublicKey("4R3gSG8BpU4t19KYj8CfnbtRpnT8gtk4dvTHxVRwc2r7")
+            )
+
+            const mevBalance = await connection.getBalance(mevCollector)
+
             if (epochInfo.epoch !== currentEpoch) {
                 currentEpoch = epochInfo.epoch
                 rewardsMap.clear()
@@ -101,7 +115,7 @@ bot.on('callback_query', async (query) => {
             })
 
             const totalRewards = rewards.reduce((curr, prev) => curr + prev.rewards, 0)
-            const message = rewards.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`).join('\n').concat(`\n\nTotal: ${totalRewards.toFixed(4)} SOL`).concat(`\nAvg Rewards/Slot: ${(totalRewards / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`)
+            const message = rewards.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`).join('\n').concat(`\n\nTotal BR: ${totalRewards.toFixed(4)} SOL`).concat(`\nAvg Rewards/Slot: ${(totalRewards / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`).concat(`\n\nTotal MEV: ${(mevBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`)
             bot.sendMessage(chatId, message).then((sentMessage) => {
                 const messageId = sentMessage.message_id;
                 setTimeout(() => {
