@@ -115,7 +115,7 @@ bot.on('callback_query', async (query) => {
             })
 
             const totalRewards = rewards.reduce((curr, prev) => curr + prev.rewards, 0)
-            const message = rewards.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`).join('\n').concat(`\n\nTotal BR: ${totalRewards.toFixed(4)} SOL`).concat(`\nAvg Rewards/Slot: ${(totalRewards / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`).concat(`\n\nTotal MEV: ${(mevBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`)
+            const message = rewards.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`).join('\n').concat(`\n\nTotal BR: ${totalRewards.toFixed(4)} SOL`).concat(`\nAvg Rewards/Slot: ${(totalRewards / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`).concat(`\n\nTotal MEV: ${(mevBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`).concat(`\nAvg MEV/Slot: ${(mevBalance / LAMPORTS_PER_SOL / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`)
             bot.sendMessage(chatId, message).then((sentMessage) => {
                 const messageId = sentMessage.message_id;
                 setTimeout(() => {
