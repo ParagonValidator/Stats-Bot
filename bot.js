@@ -115,7 +115,15 @@ bot.on('callback_query', async (query) => {
             })
 
             const totalRewards = rewards.reduce((curr, prev) => curr + prev.rewards, 0)
-            const message = rewards.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`).join('\n').concat(`\n\nTotal BR: ${totalRewards.toFixed(4)} SOL`).concat(`\nAvg Rewards/Slot: ${(totalRewards / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`).concat(`\n\nTotal MEV: ${(mevBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`).concat(`\nAvg MEV/Slot: ${(mevBalance / LAMPORTS_PER_SOL / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`)
+
+            const failedSlots = rewards.filter((item) => item.rewards === 0)
+            const bestSlots = rewards
+                .sort((a, b) => b.rewards - a.rewards) // Sort by rewards in descending order
+                .slice(0, 50); // Take the top 50
+
+            const firstLines = ["Best Slots:"].concat(bestSlots.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`)).concat(`\nFailed Slots:`).concat(failedSlots.map(item => `${item.slot}: ${item.rewards.toFixed(4)} SOL`))
+
+            const message = firstLines.join('\n').concat(`\n\nTotal BR: ${totalRewards.toFixed(4)} SOL`).concat(`\nAvg Rewards/Slot: ${(totalRewards / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`).concat(`\n\nTotal MEV: ${(mevBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`).concat(`\nAvg MEV/Slot: ${(mevBalance / LAMPORTS_PER_SOL / rewards.filter((obj) => obj.rewards > 0).length).toFixed(4)} SOL`)
             bot.sendMessage(chatId, message).then((sentMessage) => {
                 const messageId = sentMessage.message_id;
                 setTimeout(() => {
@@ -257,13 +265,15 @@ bot.on('callback_query', async (query) => {
 
             let message = "";
             if (activating.length > 0) {
-                const formattedActivating = "Activating:\n" + activating.map(entry => `- ${entry.formatted}`).join("\n");
+                const formattedActivating = activating.length > 50 ? "" : "Activating:\n" + activating.map(entry => `- ${entry.formatted}`).join("\n");
                 message += formattedActivating + "\nTotal Activating: " + totalActivating.toFixed(2) + " SOL\n\n";
             }
             if (deactivating.length > 0) {
-                const formattedDeactivating = "Deactivating:\n" + deactivating.map(entry => `- ${entry.formatted}`).join("\n");
-                message += formattedDeactivating + "\nTotal Deactivating: " + totalDeactivating.toFixed(2) + " SOL\n";
+                const formattedDeactivating = deactivating.length > 50 ? "" :"Deactivating:\n" + deactivating.map(entry => `- ${entry.formatted}`).join("\n");
+                message += formattedDeactivating + "\nTotal Deactivating: " + totalDeactivating.toFixed(2) + " SOL\n\n";
             }
+
+            message += "Net Changes: " + (totalActivating-totalDeactivating).toFixed(2) + " SOL"
 
             if (message.trim() !== "") {
                 bot.sendMessage(chatId, message).then((sentMessage) => {
