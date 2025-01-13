@@ -248,7 +248,7 @@ bot.on('callback_query', async (query) => {
                     formatted: (obj.account.data.parsed.info.stake.delegation.stake
                         / LAMPORTS_PER_SOL).toFixed(2) + " SOL"
                 };
-            });
+            }).filter((item) => item.amount > 0.01)
             activating.sort((a, b) => b.amount - a.amount);
             let totalActivating = activating.reduce((acc, cur) => acc + cur.amount, 0);
 
@@ -259,7 +259,7 @@ bot.on('callback_query', async (query) => {
                     formatted: (obj.account.data.parsed.info.stake.delegation.stake
                         / LAMPORTS_PER_SOL).toFixed(2) + " SOL"
                 };
-            });
+            }).filter((item) => item.amount > 0.01)
             deactivating.sort((a, b) => b.amount - a.amount);
             let totalDeactivating = deactivating.reduce((acc, cur) => acc + cur.amount, 0);
 
