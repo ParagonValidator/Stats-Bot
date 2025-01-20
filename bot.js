@@ -6,7 +6,7 @@ require('dotenv').config();
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true});
 
-const slotTimeAvgSeconds = 0.450
+const slotTimeAvgSeconds = 0.400
 const autoDeleteTimer = 60_000
 
 let currentEpoch = null;
