@@ -245,8 +245,10 @@ bot.on('callback_query', async (query) => {
                 return {
                     amount: (obj.account.data.parsed.info.stake.delegation.stake
                         / LAMPORTS_PER_SOL),
-                    formatted: (obj.account.data.parsed.info.stake.delegation.stake
-                        / LAMPORTS_PER_SOL).toFixed(2) + " SOL"
+                    formatted: new Intl.NumberFormat('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(obj.account.data.parsed.info.stake.delegation.stake / LAMPORTS_PER_SOL) + " SOL"
                 };
             }).filter((item) => item.amount > 0.01)
             activating.sort((a, b) => b.amount - a.amount);
@@ -256,8 +258,10 @@ bot.on('callback_query', async (query) => {
                 return {
                     amount: (obj.account.data.parsed.info.stake.delegation.stake
                         / LAMPORTS_PER_SOL),
-                    formatted: (obj.account.data.parsed.info.stake.delegation.stake
-                        / LAMPORTS_PER_SOL).toFixed(2) + " SOL"
+                    formatted: new Intl.NumberFormat('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(obj.account.data.parsed.info.stake.delegation.stake / LAMPORTS_PER_SOL) + " SOL"
                 };
             }).filter((item) => item.amount > 0.01)
             deactivating.sort((a, b) => b.amount - a.amount);
@@ -266,14 +270,23 @@ bot.on('callback_query', async (query) => {
             let message = "";
             if (activating.length > 0) {
                 const formattedActivating = activating.length > 50 ? "" : "Activating:\n" + activating.map(entry => `- ${entry.formatted}`).join("\n");
-                message += formattedActivating + "\nTotal Activating: " + totalActivating.toFixed(2) + " SOL\n\n";
+                message += formattedActivating + "\nTotal Activating: " + new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(totalActivating) + " SOL\n\n";
             }
             if (deactivating.length > 0) {
                 const formattedDeactivating = deactivating.length > 50 ? "" :"Deactivating:\n" + deactivating.map(entry => `- ${entry.formatted}`).join("\n");
-                message += formattedDeactivating + "\nTotal Deactivating: " + totalDeactivating.toFixed(2) + " SOL\n\n";
+                message += formattedDeactivating + "\nTotal Deactivating: " + new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(totalDeactivating) + " SOL\n\n";
             }
 
-            message += "Net Changes: " + (totalActivating-totalDeactivating).toFixed(2) + " SOL"
+            message += "Net Changes: " + new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(totalActivating-totalDeactivating) + " SOL"
 
             if (message.trim() !== "") {
                 bot.sendMessage(chatId, message).then((sentMessage) => {
