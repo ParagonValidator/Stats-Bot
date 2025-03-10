@@ -120,7 +120,10 @@ bot.on('callback_query', async (query) => {
                 });
                 return {
                   slot: key,
-                  rewards: (slotInfo?.rewards[0]?.lamports || 0) / 10 ** 9,
+                  rewards:
+                    (slotInfo?.rewards.find((reward) => reward.rewardType === 'Fee')?.lamports ||
+                      0) /
+                    10 ** 9,
                 };
               } catch (e) {
                 return { slot: key, rewards: 0 };
