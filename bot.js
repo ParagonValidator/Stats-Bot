@@ -97,7 +97,7 @@ bot.on('callback_query', async (query) => {
         new PublicKey('4R3gSG8BpU4t19KYj8CfnbtRpnT8gtk4dvTHxVRwc2r7')
       );
 
-      const mevBalance = await connection.getBalance(mevCollector);
+      const mevBalance = ((await connection.getBalance(mevCollector)) || 0) / LAMPORTS_PER_SOL;
 
       if (epochInfo.epoch !== currentEpoch) {
         currentEpoch = epochInfo.epoch;
@@ -143,10 +143,15 @@ bot.on('callback_query', async (query) => {
         .sort((a, b) => b.rewards - a.rewards) // Sort by rewards in descending order
         .slice(0, 50); // Take the top 50
 
-      const averageRewards = totalRewards / rewards.filter((obj) => obj.rewards > 0).length;
       const remainingSlots = leaderSlots.length - rewards.length;
+
+      const averageRewards = totalRewards / rewards.filter((obj) => obj.rewards > 0).length;
       const estimatedFutureRewards = remainingSlots * averageRewards;
       const estimatedTotalRewards = totalRewards + estimatedFutureRewards;
+
+      const averageMEV = mevBalance / rewards.filter((obj) => obj.rewards > 0).length;
+      const estimatedFutureMEV = remainingSlots * averageMEV;
+      const estimatedTotalMEV = mevBalance + estimatedFutureMEV;
 
       const firstLines = ['Best Slots:']
         .concat(bestSlots.map((item) => `${item.slot}: ${item.rewards.toFixed(4)} SOL`))
@@ -158,14 +163,13 @@ bot.on('callback_query', async (query) => {
         .concat(`\n\nTotal BR: ${totalRewards.toFixed(4)} SOL`)
         .concat(`\nAvg Rewards/Slot: ${averageRewards.toFixed(4)} SOL`)
         .concat(`\nEstimated Total Rewards: ${estimatedTotalRewards.toFixed(4)} SOL`)
-        .concat(`\n\nTotal MEV: ${(mevBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`)
+        .concat(`\n\nTotal MEV: ${mevBalance.toFixed(4)} SOL`)
         .concat(
-          `\nAvg MEV/Slot: ${(
-            mevBalance /
-            LAMPORTS_PER_SOL /
-            rewards.filter((obj) => obj.rewards > 0).length
-          ).toFixed(4)} SOL`
-        );
+          `\nAvg MEV/Slot: ${(mevBalance / rewards.filter((obj) => obj.rewards > 0).length).toFixed(
+            4
+          )} SOL`
+        )
+        .concat(`\nEstimated Total MEV: ${estimatedTotalMEV.toFixed(4)} SOL`);
 
       bot.sendMessage(chatId, message).then((sentMessage) => {
         const messageId = sentMessage.message_id;
