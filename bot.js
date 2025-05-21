@@ -194,39 +194,29 @@ bot.on('callback_query', async (query) => {
 
   if (command === 'epochInfos') {
     try {
-      const response = await fetch('https://api.stakewiz.com/epoch_info');
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-      const data = await response.json();
-
-      const validatorResponse = await fetch(
-        `https://api.stakewiz.com/validator/${process.env.VOTE_ADDRESS}`
-      );
-      if (!validatorResponse.ok) {
-        throw new Error('Failed to fetch validator data');
-      }
-      const validatorData = await validatorResponse.json();
-
       const connection = new Connection(process.env.RPC_URL);
       const leaderSchedule = await connection.getLeaderSchedule();
       const epochInfo = await connection.getEpochInfo();
       const actualSlot = epochInfo.slotIndex;
       const leaderSlots = leaderSchedule[process.env.IDENTITY_ADDRESS] || [];
       const nextSlot = findSmallestGreaterThanX(leaderSlots, actualSlot);
+      const remainingSlots = epochInfo.slotsInEpoch - epochInfo.slotIndex;
+      const { current } = await connection.getVoteAccounts();
+      const validator = current.find((v) => v.votePubkey === process.env.VOTE_ADDRESS);
+
       bot
         .sendMessage(
           chatId,
-          `Epoch: ${data.epoch}\nLeader Slots: ${leaderSlots?.length || 0}\nRemaining Slots: ${
+          `Epoch: ${epochInfo.epoch}\nLeader Slots: ${leaderSlots?.length || 0}\nRemaining Slots: ${
             leaderSlots.filter((num) => num > actualSlot).length
           }\nNext Slot in: ~${formatSeconds(
             parseInt((nextSlot - actualSlot) * slotTimeAvgSeconds)
           )}\nRemaining Time: ${formatSeconds(
-            data.remaining_seconds
+            Math.floor(remainingSlots * slotTimeAvgSeconds)
           )}\n\nActive Stake: ${new Intl.NumberFormat('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          }).format(Number(validatorData.activated_stake))} SOL\n`
+          }).format(Number((validator?.activatedStake || 0) / LAMPORTS_PER_SOL))} SOL\n`
         )
         .then((sentMessage) => {
           const messageId = sentMessage.message_id;
